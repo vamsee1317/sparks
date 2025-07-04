@@ -5,6 +5,81 @@ export default function AuthForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
 
+  const [user, setUser] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
+
+  const [errors, setErrors] = useState({});
+
+  const handleInput = (e) => {
+    setUser((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setErrors((prev) => ({ ...prev, [e.target.name]: "" }));
+  };
+
+  const validateInputs = () => {
+    const nameRegex = /^[A-Za-z ]{3,10}$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,15}$/;
+
+    const newErrors = {};
+
+    if (isRegistering) {
+      if (!nameRegex.test(user.name)) {
+        newErrors.name = "Name must be 3 to 10 alphabetic characters.";
+      }
+    }
+
+    if (!emailRegex.test(user.email)) {
+      newErrors.email = "Enter a valid email address.";
+    }
+
+    if (!passwordRegex.test(user.password)) {
+      newErrors.password =
+        "Password must be 8–15 characters, include uppercase, lowercase, number & symbol.";
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    if (!validateInputs()) return;
+
+    const storedUser = localStorage.getItem(user.email);
+
+    if (isRegistering) {
+      if (storedUser) {
+        setErrors({ email: "User already exists. Please sign in." });
+        setIsRegistering(false);
+      } else {
+        localStorage.setItem(user.email, JSON.stringify(user));
+        alert("Registered successfully!");
+        setIsRegistering(false);
+        setUser({ name: "", email: "", password: "" });
+        setErrors({});
+      }
+    } else {
+      if (!storedUser) {
+        setErrors({ email: "User not found. Please register first." });
+      } else {
+        const existing = JSON.parse(storedUser);
+        if (existing.password === user.password) {
+          alert("Login successful!");
+          setUser({ name: "", email: "", password: "" });
+          setErrors({});
+        } else {
+          setErrors({ password: "Incorrect password." });
+        }
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-white px-4">
       <div className="w-full max-w-md space-y-6">
@@ -33,40 +108,63 @@ export default function AuthForm() {
         </div>
 
         {/* Form */}
-        <form className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {isRegistering && (
             <div>
-              <label className="block text-sm font-medium text-gray-700">Name</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Name
+              </label>
               <div className="relative">
                 <input
                   type="text"
+                  name="name"
+                  value={user.name}
+                  onChange={handleInput}
                   placeholder="Enter your name"
-                  className="w-full px-4 py-2 pr-10 rounded-lg border border-gray-300 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-black"
+                  className="w-full px-4 py-2 pr-10 rounded-lg border border-gray-300 bg-gray-50"
                 />
                 <FaUser className="absolute right-3 top-3 text-gray-400" />
               </div>
+              {errors.name && (
+                <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+              )}
             </div>
           )}
 
+          {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Email</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Email
+            </label>
             <div className="relative">
               <input
                 type="email"
+                name="email"
+                value={user.email}
+                onChange={handleInput}
                 placeholder="Enter your email"
-                className="w-full px-4 py-2 pr-10 rounded-lg border border-gray-300 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-black"
+                className="w-full px-4 py-2 pr-10 rounded-lg border border-gray-300 bg-gray-50"
               />
               <FaEnvelope className="absolute right-3 top-3 text-gray-400" />
             </div>
+            {errors.email && (
+              <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+            )}
           </div>
 
+          {/* Password */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Password</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Password
+            </label>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
+                name="password"
+                value={user.password}
+                onChange={handleInput}
                 placeholder="Enter your password"
-                className="w-full px-4 py-2 pr-10 rounded-lg border border-gray-300 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-black"
+                className="w-full px-4 py-2 pr-10 rounded-lg border border-gray-300 bg-gray-50"
               />
               <button
                 type="button"
@@ -76,20 +174,12 @@ export default function AuthForm() {
                 {showPassword ? <FaEye /> : <FaEyeSlash />}
               </button>
             </div>
+            {errors.password && (
+              <p className="text-red-500 text-xs mt-1">{errors.password}</p>
+            )}
           </div>
 
-          {!isRegistering && (
-            <div className="flex justify-between items-center text-sm">
-              <label className="flex items-center space-x-2">
-                <input type="checkbox" className="form-checkbox rounded" />
-                <span>Remember me</span>
-              </label>
-              <a href="#" className="text-blue-500 hover:underline">
-                Forgot Password?
-              </a>
-            </div>
-          )}
-
+          {/* Sign In or Register Button */}
           <button
             type="submit"
             className="w-full bg-black text-white py-2 rounded-lg font-semibold hover:opacity-90"
@@ -112,13 +202,16 @@ export default function AuthForm() {
           )}
         </form>
 
-        {/* Toggle */}
+        {/* Toggle Link */}
         <p className="text-center text-sm text-gray-600">
           {isRegistering ? (
             <>
               Already have an account?{" "}
               <button
-                onClick={() => setIsRegistering(false)}
+                onClick={() => {
+                  setIsRegistering(false);
+                  setErrors({});
+                }}
                 className="text-black font-medium hover:underline"
               >
                 Sign In
@@ -128,7 +221,10 @@ export default function AuthForm() {
             <>
               Don’t have an account?{" "}
               <button
-                onClick={() => setIsRegistering(true)}
+                onClick={() => {
+                  setIsRegistering(true);
+                  setErrors({});
+                }}
                 className="text-black font-medium hover:underline"
               >
                 Register
@@ -140,3 +236,4 @@ export default function AuthForm() {
     </div>
   );
 }
+  

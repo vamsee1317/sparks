@@ -1,44 +1,156 @@
 import { useState } from "react";
-import { FaEnvelope, FaEyeSlash, FaEye } from "react-icons/fa";
+import { FaEyeSlash, FaEye } from "react-icons/fa";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(false);
+
+  const [user, setUser] = useState({
+    firstName: "",
+    mobileNumber: "",
+    password: "",
+    cpassword: "",
+  });
+
+  const [errors, setErrors] = useState({});
+
+  const handleInput = (e) => {
+    setUser((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setErrors((prev) => ({ ...prev, [e.target.name]: "" })); // Clear error on change
+  };
+
+  const validateInputs = () => {
+    const nameRegex = /^[A-Za-z]{3,10}$/;
+    const mobileRegex = /^[6-9]\d{9}$/;
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,15}$/;
+
+    const newErrors = {};
+
+    if (!nameRegex.test(user.firstName)) {
+      newErrors.firstName =
+        "First name must be 3 to 10 alphabetic characters.";
+    }
+
+    if (!mobileRegex.test(user.mobileNumber)) {
+      newErrors.mobileNumber = "Enter a valid Indian mobile number.";
+    }
+
+    if (!passwordRegex.test(user.password)) {
+      newErrors.password =
+        "Password must be 8–15 characters, with uppercase, lowercase, number, and symbol.";
+    }
+
+    if (user.password !== user.cpassword) {
+      newErrors.cpassword = "Passwords do not match.";
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    if (!validateInputs()) return;
+
+    const existingUser = localStorage.getItem(user.mobileNumber);
+
+    if (existingUser) {
+      setErrors({ mobileNumber: "User already exists. Please sign in." });
+      setIsNewUser(false);
+    } else {
+      localStorage.setItem(user.mobileNumber, JSON.stringify(user));
+      alert("Registered successfully!");
+      setIsNewUser(false);
+      setUser({ firstName: "", mobileNumber: "", password: "", cpassword: "" });
+      setErrors({});
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white px-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
-          <h2 className="text-3xl font-bold">Welcome Back</h2>
-          <p className="text-gray-500 mt-2">Sign in to continue learning</p>
+          <h2 className="text-3xl font-bold">
+            {isNewUser ? "Register" : "Welcome Back"}
+          </h2>
+          <p className="text-gray-500 mt-2">
+            {isNewUser
+              ? "Create your Sparks account"
+              : "Sign in to continue learning"}
+          </p>
         </div>
 
-        <div className="bg-gray-50 rounded-xl p-6 text-center">
-          <h3 className="text-lg font-semibold">Sign In</h3>
-          <p className="text-sm text-gray-500">Enter your credentials to access your account</p>
-        </div>
-
-        <form className="space-y-4">
-          {/* Email */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* First Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Email</label>
-            <div className="relative">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="w-full px-4 py-2 pr-10 rounded-lg border border-gray-300 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-black"
-              />
-              <FaEnvelope className="absolute right-3 top-3 text-gray-400" />
-            </div>
+            <label className="block text-sm font-medium text-gray-700">
+              First Name
+            </label>
+            <input
+              type="text"
+              name="firstName"
+              value={user.firstName}
+              onChange={handleInput}
+              placeholder="Enter your first name"
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-gray-50"
+            />
+            {errors.firstName && (
+              <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>
+            )}
+          </div>
+
+          {/* Mobile Number */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Mobile Number
+            </label>
+            <input
+              type="tel"
+              name="mobileNumber"
+              value={user.mobileNumber}
+              onChange={handleInput}
+              placeholder="Enter mobile number"
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-gray-50"
+            />
+            {errors.mobileNumber && (
+              <p className="text-red-500 text-xs mt-1">{errors.mobileNumber}</p>
+            )}
           </div>
 
           {/* Password */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Password</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Password
+            </label>
+            <input
+              type="password"
+              name="password"
+              value={user.password}
+              onChange={handleInput}
+              placeholder="Enter password"
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-gray-50"
+            />
+            {errors.password && (
+              <p className="text-red-500 text-xs mt-1">{errors.password}</p>
+            )}
+          </div>
+
+          {/* Confirm Password */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Confirm Password
+            </label>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder="Enter your password"
-                className="w-full px-4 py-2 pr-10 rounded-lg border border-gray-300 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-black"
+                name="cpassword"
+                value={user.cpassword}
+                onChange={handleInput}
+                placeholder="Confirm password"
+                className="w-full px-4 py-2 pr-10 rounded-lg border border-gray-300 bg-gray-50"
               />
               <button
                 type="button"
@@ -48,38 +160,48 @@ export default function Login() {
                 {showPassword ? <FaEye /> : <FaEyeSlash />}
               </button>
             </div>
+            {errors.cpassword && (
+              <p className="text-red-500 text-xs mt-1">{errors.cpassword}</p>
+            )}
           </div>
 
-          {/* Remember me + Forgot */}
-          <div className="flex justify-between items-center text-sm">
-            <label className="flex items-center space-x-2">
-              <input type="checkbox" className="form-checkbox rounded" />
-              <span>Remember me</span>
-            </label>
-            <a href="#" className="text-blue-500 hover:underline">Forgot Password?</a>
-          </div>
-
-          {/* Sign In Button */}
           <button
             type="submit"
             className="w-full bg-black text-white py-2 rounded-lg font-semibold hover:opacity-90"
           >
-            Sign In
+            {isNewUser ? "Register" : "Sign In"}
           </button>
-
-          {/* Divider */}
-          <div className="text-center text-gray-500">Or continue with</div>
-
-          {/* Social Buttons */}
-          <div className="flex gap-4">
-            <button className="flex-1 border rounded-lg py-2 font-medium hover:bg-gray-100">Google</button>
-            <button className="flex-1 bg-blue-600 text-white rounded-lg py-2 font-medium hover:opacity-90">Facebook</button>
-          </div>
         </form>
 
-        {/* Register */}
+        {/* Toggle */}
         <p className="text-center text-sm text-gray-600">
-          Don't have an account? <a href="#" className="text-black font-medium hover:underline">Register</a>
+          {isNewUser ? (
+            <>
+              Already a user?{" "}
+              <button
+                onClick={() => {
+                  setIsNewUser(false);
+                  setErrors({});
+                }}
+                className="text-black font-medium hover:underline"
+              >
+                Sign In
+              </button>
+            </>
+          ) : (
+            <>
+              Don’t have an account?{" "}
+              <button
+                onClick={() => {
+                  setIsNewUser(true);
+                  setErrors({});
+                }}
+                className="text-black font-medium hover:underline"
+              >
+                Register
+              </button>
+            </>
+          )}
         </p>
       </div>
     </div>
